@@ -16,7 +16,7 @@ class Hyperparameters:
     # 3: RGB
     CHANNELS_IMG : int = 3
     Z_DIM : int = 100
-    NUM_EPOCHS : int = 5
+    NUM_EPOCHS : int = 25
     FEATURES_DISC : int = 64
     FEATURES_GEN : int = 64
     CRITIC_ITERATIONS : int = 5
@@ -26,7 +26,7 @@ class Hyperparameters:
     GEN_EMBEDDING : int = 100
     # No momentum
     ADAM_BETAS : tuple = (0.0, 0.9)
-    MODEL_SAVE_STEP : int = 1
+    MODEL_SAVE_STEP : int = 50
 
 def gradient_penalty(critic, labels, real, fake, device="cpu"):
     BATCH_SIZE, C, H, W = real.shape
