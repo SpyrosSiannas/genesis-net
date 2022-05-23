@@ -1,5 +1,31 @@
 import torch
 import torch.nn as nn
+from dataclasses import dataclass
+
+@dataclass
+class Hyperparameters:
+    LEARNING_RATE : float = 1e-4
+    BATCH_SIZE : int = 64
+    # Do not change without messing with the models
+    IMAGE_SIZE : int = 64
+
+    # 1: monochrome
+    # 3: RGB
+    CHANNELS_IMG : int = 3
+    Z_DIM : int = 100
+
+    NUM_EPOCHS : int = 5
+
+    FEATURES_DISC : int = 64
+    FEATURES_GEN : int = 64
+
+    CRITIC_ITERATIONS : int = 5
+    LAMBDA_GP : int = 10
+
+    NOISE_DIM : int = 100
+
+    # No momentum
+    ADAM_BETAS : tuple = (0.0, 0.9)
 
 def gradient_penalty(critic, real, fake, device="cpu"):
     BATCH_SIZE, C, H, W = real.shape
