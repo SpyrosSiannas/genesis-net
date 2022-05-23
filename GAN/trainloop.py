@@ -70,7 +70,7 @@ class TrainLoop():
                     fake = self.gen(noise, labels)
                     critic_real = self.disc(real, critic_labels).reshape(-1)
                     critic_fake = self.disc(fake, critic_labels).reshape(-1)
-                    gp = gradient_penalty(self.disc, labels, real, fake, device=self.device)
+                    gp = gradient_penalty(self.disc, critic_labels, real, fake, device=self.device)
                     loss_critic = -(torch.mean(critic_real) \
                                 - torch.mean(critic_fake)) \
                                 + self.params.LAMBDA_GP*gp
