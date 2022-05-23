@@ -60,8 +60,8 @@ class TrainLoop():
             for batch_idx, (real, labels) in enumerate(self.loader):
                 real = real.to(self.device)
                 labels = labels.unsqueeze(-1).unsqueeze(-1).to(self.device)
-                labels_fill = torch.zeros(labels.shape[0], labels.shape[1], self.img_size, self.img_size).to(self.device)
-                critic_labels = labels + labels_fill
+                labels_fill = torch.zeros(labels.shape[0], labels.shape[1], self.params.IMG_SIZE, self.params.IMG_SIZE).to(self.device)
+                critic_labels = (labels + labels_fill).to(self.device)
                 cur_batch_size = real.shape[0]
 
                 # Train the critic
