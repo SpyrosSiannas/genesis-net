@@ -40,7 +40,6 @@ class Discriminator(nn.Module):
             nn.Conv2d(
                 features_disc * 8, 1, kernel_size=4, stride=2, padding=0
             ),
-            nn.Sigmoid(),
         )
 
 
@@ -58,7 +57,7 @@ class Discriminator(nn.Module):
                 padding,
                 bias=False,
             ),
-            nn.BatchNorm2d(out_channels),
+            nn.InstanceNorm2d(out_channels, affine=True), # LayerNorm == InstanceNorm?
             nn.LeakyReLU(0.2)
         )
 # Generator net
@@ -91,7 +90,7 @@ class Generator(nn.Module):
                 padding,
                 bias=False, # Because we are batching
             ),
-            nn.BatchNorm2d(out_channels),
+            nn.InstanceNorm2d(out_channels, affine=True),
             nn.ReLU(),
         )
 
