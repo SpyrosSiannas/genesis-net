@@ -73,7 +73,7 @@ class TrainLoop():
 
                 if batch_idx % 100 == 0 and batch_idx > 0:
                     print(
-                        f"[{datetime.now().strftime('%H:%M:%S')}] Epoch [{epoch}/{params.NUM_EPOCHS}] Batch {batch_idx}/{len(loader)} \
+                        f"[{datetime.now().strftime('%H:%M:%S')}] Epoch [{epoch}/{self.params.NUM_EPOCHS}] Batch {batch_idx}/{len(self.loader)} \
                             Loss D: {loss_critic:.4f}, loss G: {loss_gen:.4f}"
                     )
 
