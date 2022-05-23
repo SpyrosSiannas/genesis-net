@@ -3,3 +3,6 @@ dataset/**
 env/**
 **/__pycache__/**
 **/logs/**
+**/model_checkpoints/**
+**/.ipynb_checkpoints/**
+Untitled.ipynb

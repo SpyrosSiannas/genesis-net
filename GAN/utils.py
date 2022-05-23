@@ -26,6 +26,7 @@ class Hyperparameters:
     GEN_EMBEDDING : int = 100
     # No momentum
     ADAM_BETAS : tuple = (0.0, 0.9)
+    MODEL_SAVE_STEP : int = 1
 
 def gradient_penalty(critic, labels, real, fake, device="cpu"):
     BATCH_SIZE, C, H, W = real.shape

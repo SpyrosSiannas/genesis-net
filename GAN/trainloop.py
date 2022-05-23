@@ -10,6 +10,7 @@ from GAN.model import Discriminator, Generator, initialize_weights
 from GAN.utils import gradient_penalty, Hyperparameters, CelebA
 
 from datetime import datetime
+import os
 
 class TrainLoop():
     def __init__(self) -> None:
@@ -49,8 +50,10 @@ class TrainLoop():
         self.writer_fake = SummaryWriter(f"logs/fake")
         self.fixed_noise = torch.randn(32, self.params.Z_DIM, 1, 1).to(self.device)
 
+    def train(self, load_pretrained=False) -> None:
+        if load_pretrained:
+            self.__load_model()
 
-    def train(self) -> None:
         step = 0
         self.gen.train()
         self.disc.train()
@@ -103,3 +106,22 @@ class TrainLoop():
                         self.writer_fake.add_image("Fake", img_grid_fake, global_step=step)
 
                     step+=1
+
+                if batch_idx % self.params.MODEL_SAVE_STEP == 0 and batch_idx > 0:
+                    self.__save_model()
+
+    def __load_model(self):
+        if not os.path.exists("./model_checkpoints"):
+            print("Could not find models to load")
+            return
+
+        print("===== LOADING MODELS =====")
+        self.disc.load_state_dict(torch.load('./model_checkpoints/discriminator.pth'))
+        self.gen.load_state_dict(torch.load('./model_checkpoints/generator.pth'))
+
+    def __save_model(self):
+        print("===== STORING CHECKPOINT =====")
+        if not os.path.exists("./model_checkpoints"):
+            os.mkdir("./model_checkpoints")
+        torch.save(self.disc.state_dict(), './model_checkpoints/discriminator.pth')
+        torch.save(self.gen.state_dict(), './model_checkpoints/generator.pth')
