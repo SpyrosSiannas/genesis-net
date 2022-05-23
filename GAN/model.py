@@ -4,8 +4,9 @@ from collections import OrderedDict
 
 # Discriminator net
 class Discriminator(nn.Module):
-    def __init__(self, channels_img, features_disc):
+    def __init__(self, channels_img, features_disc, num_classes, img_size):
         super(Discriminator, self).__init__()
+        self.img_size = img_size
         # Initialize first two layers
         # modelLayers = OrderedDict([
         #     ("conv1", nn.Conv2d(
@@ -31,21 +32,23 @@ class Discriminator(nn.Module):
         # modelLayers["activationFinal"] = nn.Sigmoid()
         self.discriminator = nn.Sequential(
             nn.Conv2d(
-                channels_img, features_disc, kernel_size=4, stride=2, padding=1
+                channels_img+num_classes, features_disc, kernel_size=4, stride=2, padding=1
             ),
             nn.LeakyReLU(0.2),
-            self._block(features_disc, features_disc * 2, 4 ,2  ,1),
+            self._block(features_disc, features_disc * 2, 4 ,2 ,1),
             self._block(features_disc * 2, features_disc * 4, 4 ,2 ,1),
             self._block(features_disc * 4, features_disc * 8, 4 ,2 ,1),
             nn.Conv2d(
-                features_disc * 8, 1, kernel_size=4, stride=2, padding=0
+                features_disc * 8, 1, kernel_size=4, stride=1, padding=0
             ),
         )
 
 
-    def forward(self, input):
-        # First iteration : no labels
-        return self.discriminator(input)
+    def forward(self, m_input, labels):
+        labels_fill = torch.zeros(labels.shape[0], labels.shape[1], self.img_size, self.img_size)
+        labels = labels_fill + labels
+        m_input = torch.cat([m_input, labels], dim = 1)
+        return self.discriminator(m_input)
 
     def _block(self, in_channels, out_channels, kernel_size, stride, padding):
         return nn.Sequential(
@@ -62,11 +65,18 @@ class Discriminator(nn.Module):
         )
 # Generator net
 class Generator(nn.Module):
-    def __init__(self, z_dim, channels_img, features_gen):
+    def __init__(self,
+                z_dim,
+                channels_img,
+                features_gen,
+                num_classes,
+                img_size,
+                embed_size):
         super(Generator, self).__init__()
+        self.img_size = img_size
         self.gen = nn.Sequential(
             # Input : N x z_features_gen x 1 x 1
-            self._block(z_dim, features_gen * 16, 4, 1, 0), # N x features_gen x 16 x 4 x 4
+            self._block(z_dim+num_classes, features_gen * 16, 4, 1, 0), # 4 x 4
             self._block(features_gen * 16, features_gen * 8, 4, 2, 1), # 8x8
             self._block(features_gen * 8, features_gen * 4, 4, 2, 1), # 16x16
             self._block(features_gen * 4, features_gen * 2, 4, 2, 1), # 32x32
@@ -75,9 +85,14 @@ class Generator(nn.Module):
             ),
             nn.Tanh(),
         )
+        self.transposeConvLabels = nn.ConvTranspose2d(num_classes, embed_size , kernel_size=4, stride=1, padding=0, bias=False)
+        self.batchLabels = nn.BatchNorm2d(embed_size)
 
-    def forward(self, input):
-        return self.gen(input)
+    def forward(self, m_input, labels):
+        # Latent Vector : N x noise_dim x 1 x 1
+
+        m_input = torch.cat([m_input, labels], dim=1)
+        return self.gen(m_input)
 
     def _block(self, in_channels, out_channels, kernel_size, stride, padding):
         # We upscale here
@@ -111,4 +126,4 @@ def test():
     assert gen(z).shape == (N, in_channels, H, W)
     print("Successful test")
 
-test()
+#test()

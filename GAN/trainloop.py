@@ -7,7 +7,7 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from GAN.model import Discriminator, Generator, initialize_weights
-from GAN.utils import gradient_penalty, Hyperparameters
+from GAN.utils import gradient_penalty, Hyperparameters, CelebA
 
 from datetime import datetime
 
@@ -18,7 +18,7 @@ class TrainLoop():
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         m_transforms = transforms.Compose(
             [
-                transforms.Resize((self.params.IMAGE_SIZE, self.params.IMAGE_SIZE)),
+                transforms.Resize((self.params.IMG_SIZE, self.params.IMG_SIZE)),
                 transforms.ToTensor(),
                 transforms.Normalize(
                     [0.5 for _ in range(self.params.CHANNELS_IMG)], [0.5 for _ in range(self.params.CHANNELS_IMG)]
@@ -26,11 +26,20 @@ class TrainLoop():
             ]
         )
 
-        #dataset = datasets.MNIST(root="dataset", train=True, transform=m_transforms, download=True)
-        self.dataset = datasets.ImageFolder(root="dataset/img", transform=m_transforms)
+        #self.dataset = datasets.CelebA(root="dataset", transform=m_transforms, download=True)
+        self.dataset = CelebA('.', transform = m_transforms)
+
         self.loader = DataLoader(self.dataset, batch_size=self.params.BATCH_SIZE, shuffle=True)
-        self.gen = Generator(self.params.NOISE_DIM, self.params.CHANNELS_IMG, self.params.FEATURES_GEN).to(self.device)
-        self.disc = Discriminator(self.params.CHANNELS_IMG, self.params.FEATURES_DISC).to(self.device)
+        self.gen = Generator(self.params.NOISE_DIM,
+                            self.params.CHANNELS_IMG,
+                            self.params.FEATURES_GEN,
+                            self.params.NUM_CLASSES,
+                            self.params.IMG_SIZE,
+                            self.params.GEN_EMBEDDING).to(self.device)
+        self.disc = Discriminator(self.params.CHANNELS_IMG,
+                                  self.params.FEATURES_DISC,
+                                  self.params.NUM_CLASSES,
+                                  self.params.IMG_SIZE).to(self.device)
         initialize_weights(self.gen)
         initialize_weights(self.disc)
         self.opt_gen = optim.Adam(self.gen.parameters(), lr=self.params.LEARNING_RATE, betas=self.params.ADAM_BETAS)
@@ -48,17 +57,18 @@ class TrainLoop():
 
         print(f"[{datetime.now().strftime('%H:%M:%S')}] STARTING TRAINING")
         for epoch in range(self.params.NUM_EPOCHS):
-            for batch_idx, (real, _) in enumerate(self.loader):
+            for batch_idx, (real, labels) in enumerate(self.loader):
                 real = real.to(self.device)
+                labels = labels.unsqueeze(-1).unsqueeze(-1).to(self.device)
                 cur_batch_size = real.shape[0]
 
                 # Train the critic
                 for _ in range(self.params.CRITIC_ITERATIONS):
-                    noise = torch.randn(cur_batch_size, self.params.NOISE_DIM, 1, 1).to(self.device)
-                    fake = self.gen(noise)
-                    critic_real = self.disc(real).reshape(-1)
-                    critic_fake = self.disc(fake).reshape(-1)
-                    gp = gradient_penalty(self.disc, real, fake, device=self.device)
+                    noise = torch.randn(cur_batch_size, self.params.NOISE_DIM).view(-1, self.params.NOISE_DIM, 1, 1).to(self.device)
+                    fake = self.gen(noise, labels)
+                    critic_real = self.disc(real, labels).reshape(-1)
+                    critic_fake = self.disc(fake, labels).reshape(-1)
+                    gp = gradient_penalty(self.disc, labels, real, fake, device=self.device)
                     loss_critic = -(torch.mean(critic_real) \
                                 - torch.mean(critic_fake)) \
                                 + self.params.LAMBDA_GP*gp
@@ -66,7 +76,7 @@ class TrainLoop():
                     loss_critic.backward(retain_graph=True)
                     self.opt_disc.step()
 
-                output = self.disc(fake).reshape(-1)
+                output = self.disc(fake, labels).reshape(-1)
                 loss_gen = -torch.mean(output)
                 self.gen.zero_grad()
                 loss_gen.backward()
@@ -79,7 +89,7 @@ class TrainLoop():
                     )
 
                     with torch.no_grad():
-                        fake = self.gen(self.fixed_noise)
+                        fake = self.gen(noise, labels)
                         img_grid_real = torchvision.utils.make_grid(
                             real[:32], normalize=True
                         )
