@@ -60,14 +60,16 @@ class TrainLoop():
             for batch_idx, (real, labels) in enumerate(self.loader):
                 real = real.to(self.device)
                 labels = labels.unsqueeze(-1).unsqueeze(-1).to(self.device)
+                labels_fill = torch.zeros(labels.shape[0], labels.shape[1], self.img_size, self.img_size).to(self.device)
+                critic_labels = labels + labels_fill
                 cur_batch_size = real.shape[0]
 
                 # Train the critic
                 for _ in range(self.params.CRITIC_ITERATIONS):
                     noise = torch.randn(cur_batch_size, self.params.NOISE_DIM).view(-1, self.params.NOISE_DIM, 1, 1).to(self.device)
                     fake = self.gen(noise, labels)
-                    critic_real = self.disc(real, labels).reshape(-1)
-                    critic_fake = self.disc(fake, labels).reshape(-1)
+                    critic_real = self.disc(real, critic_labels).reshape(-1)
+                    critic_fake = self.disc(fake, critic_labels).reshape(-1)
                     gp = gradient_penalty(self.disc, labels, real, fake, device=self.device)
                     loss_critic = -(torch.mean(critic_real) \
                                 - torch.mean(critic_fake)) \
@@ -76,7 +78,7 @@ class TrainLoop():
                     loss_critic.backward(retain_graph=True)
                     self.opt_disc.step()
 
-                output = self.disc(fake, labels).reshape(-1)
+                output = self.disc(fake, critic_labels).reshape(-1)
                 loss_gen = -torch.mean(output)
                 self.gen.zero_grad()
                 loss_gen.backward()

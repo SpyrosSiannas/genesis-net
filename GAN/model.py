@@ -45,8 +45,6 @@ class Discriminator(nn.Module):
 
 
     def forward(self, m_input, labels):
-        labels_fill = torch.zeros(labels.shape[0], labels.shape[1], self.img_size, self.img_size)
-        labels = labels_fill + labels
         m_input = torch.cat([m_input, labels], dim = 1)
         return self.discriminator(m_input)
 
