@@ -42,7 +42,7 @@ transforms = transforms.Compose(
 )
 
 #dataset = datasets.MNIST(root="../dataset", train=True, transform=transforms, download=True)
-dataset = datasets.ImageFolder(root="../dataset/img_align_celeba")
+dataset = datasets.ImageFolder(root="dataset/img", transform=transforms)
 loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
 gen = Generator(NOISE_DIM, CHANNELS_IMG, FEATURES_GEN).to(device)
 disc = Discriminator(CHANNELS_IMG, FEATURES_DISC).to(device)
@@ -61,6 +61,7 @@ step = 0
 gen.train()
 disc.train()
 
+print("STARTING TRAINING")
 for epoch in range(NUM_EPOCHS):
     for batch_idx, (real, _) in enumerate(loader):
         real = real.to(device)
@@ -78,7 +79,7 @@ for epoch in range(NUM_EPOCHS):
                           - torch.mean(critic_fake)) \
                           + LAMBDA_GP*gp
             disc.zero_grad()
-            loss.critic.backward(retain_graph=True)
+            loss_critic.backward(retain_graph=True)
             opt_disc.step()
 
         output = disc(fake).reshape(-1)
