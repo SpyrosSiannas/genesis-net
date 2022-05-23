@@ -38,7 +38,7 @@ class TrainLoop():
         # TODO: Move logger to another class
         self.writer_real = SummaryWriter(f"logs/real")
         self.writer_fake = SummaryWriter(f"logs/fake")
-        self.fixed_noise = torch.randn(32, Z_DIM, 1, 1).to(device)
+        self.fixed_noise = torch.randn(32, self.params.Z_DIM, 1, 1).to(device)
 
 
     def train(self) -> None:
