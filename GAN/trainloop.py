@@ -119,7 +119,7 @@ class TrainLoop():
                     self.__save_model()
 
     def __load_model(self, device="cuda") -> bool:
-        if not os.path.exists(self.model_storage_path):
+        if not os.path.exists(f'{self.model_storage_path}/generator.pth') or not os.path.exists(f'{self.model_storage_path}/discriminator.pth'):
             print("Could not find models to load")
             return False
 
