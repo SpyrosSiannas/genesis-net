@@ -50,6 +50,13 @@ class TrainLoop():
         self.writer_fake = SummaryWriter(f"logs/fake")
         self.fixed_noise = torch.randn(32, self.params.Z_DIM, 1, 1).to(self.device)
 
+    def eval_generator(self, features_vector):
+        if (self.__load_model("cpu")):
+            self.gen.eval()
+            noise = torch.randn(1, self.params.NOISE_DIM).view(-1, self.params.NOISE_DIM, 1, 1)
+            output = self.gen(noise, features_vector)
+            return output
+
     def train(self, load_pretrained=False) -> None:
         if load_pretrained:
             self.__load_model()
@@ -110,14 +117,20 @@ class TrainLoop():
                 if batch_idx % self.params.MODEL_SAVE_STEP == 0 and batch_idx > 0:
                     self.__save_model()
 
-    def __load_model(self):
+    def __load_model(self, device="cuda") -> bool:
         if not os.path.exists("./model_checkpoints"):
             print("Could not find models to load")
-            return
+            return False
 
         print("===== LOADING MODELS =====")
-        self.disc.load_state_dict(torch.load('./model_checkpoints/discriminator.pth'))
-        self.gen.load_state_dict(torch.load('./model_checkpoints/generator.pth'))
+        if device == "cuda":
+            self.gen.load_state_dict(torch.load('./model_checkpoints/generator.pth'))
+            self.disc.load_state_dict(torch.load('./model_checkpoints/discriminator.pth'))
+        else:
+            self.gen.load_state_dict(torch.load('./model_checkpoints/generator.pth', map_location=torch.device('cpu')))
+            self.disc.load_state_dict(torch.load('./model_checkpoints/discriminator.pth' , map_location=torch.device('cpu')))
+        return True
+
 
     def __save_model(self):
         print("===== STORING CHECKPOINT =====")
