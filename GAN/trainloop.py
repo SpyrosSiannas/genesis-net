@@ -13,7 +13,8 @@ from datetime import datetime
 import os
 
 class TrainLoop():
-    def __init__(self) -> None:
+    def __init__(self, model_storage_path="./model_checkpoints") -> None:
+        self.model_storage_path = model_storage_path
         # Hyperparameters and general setup
         self.params = Hyperparameters()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -50,7 +51,7 @@ class TrainLoop():
         self.writer_fake = SummaryWriter(f"logs/fake")
         self.fixed_noise = torch.randn(32, self.params.Z_DIM, 1, 1).to(self.device)
 
-    def eval_generator(self, features_vector):
+    def predict(self, features_vector):
         if (self.__load_model("cpu")):
             self.gen.eval()
             noise = torch.randn(1, self.params.NOISE_DIM).view(-1, self.params.NOISE_DIM, 1, 1)
@@ -118,23 +119,23 @@ class TrainLoop():
                     self.__save_model()
 
     def __load_model(self, device="cuda") -> bool:
-        if not os.path.exists("./model_checkpoints"):
+        if not os.path.exists(self.model_storage_path):
             print("Could not find models to load")
             return False
 
         print("===== LOADING MODELS =====")
         if device == "cuda":
-            self.gen.load_state_dict(torch.load('./model_checkpoints/generator.pth'))
-            self.disc.load_state_dict(torch.load('./model_checkpoints/discriminator.pth'))
+            self.gen.load_state_dict(torch.load(f'{self.model_storage_path}/generator.pth'))
+            self.disc.load_state_dict(torch.load(f'{self.model_storage_path}/discriminator.pth'))
         else:
-            self.gen.load_state_dict(torch.load('./model_checkpoints/generator.pth', map_location=torch.device('cpu')))
-            self.disc.load_state_dict(torch.load('./model_checkpoints/discriminator.pth' , map_location=torch.device('cpu')))
+            self.gen.load_state_dict(torch.load(f'{self.model_storage_path}/generator.pth', map_location=torch.device('cpu')))
+            self.disc.load_state_dict(torch.load(f'{self.model_storage_path}/discriminator.pth' , map_location=torch.device('cpu')))
         return True
 
 
     def __save_model(self):
         print("===== STORING CHECKPOINT =====")
-        if not os.path.exists("./model_checkpoints"):
-            os.mkdir("./model_checkpoints")
-        torch.save(self.disc.state_dict(), './model_checkpoints/discriminator.pth')
-        torch.save(self.gen.state_dict(), './model_checkpoints/generator.pth')
+        if not os.path.exists(self.model_storage_path):
+            os.mkdir(self.model_storage_path)
+        torch.save(self.disc.state_dict(), f'{self.model_storage_path}/discriminator.pth')
+        torch.save(self.gen.state_dict(), f'{self.model_storage_path}/generator.pth')
