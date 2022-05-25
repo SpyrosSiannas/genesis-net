@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 from collections import OrderedDict
-from GAN.utils import label_conv_concat
 
 # Discriminator net
 class Discriminator(nn.Module):
