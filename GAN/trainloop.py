@@ -78,9 +78,9 @@ class TrainLoop():
                     noise = torch.randn(cur_batch_size, self.params.NOISE_DIM).view(-1, self.params.NOISE_DIM, 1, 1).to(self.device)
                     fake = self.gen(noise, labels).to(self.device)
                     critic_labels_real = label_conv_concat(real, labels, self.device)
-                    critic_real = self.disc(real, critic_labels).reshape(-1)
+                    critic_real = self.disc(real, critic_labels_real).reshape(-1)
                     critic_labels_fake = label_conv_concat(fake, labels, self.device)
-                    critic_fake = self.disc(fake, critic_labels).reshape(-1)
+                    critic_fake = self.disc(fake, critic_labels_fake).reshape(-1)
                     gp = gradient_penalty(self.disc, critic_labels, real, fake, device=self.device)
                     loss_critic = -(torch.mean(critic_real) \
                                 - torch.mean(critic_fake)) \
