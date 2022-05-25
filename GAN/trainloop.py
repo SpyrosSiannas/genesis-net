@@ -70,7 +70,7 @@ class TrainLoop():
         for epoch in range(self.params.NUM_EPOCHS):
             for batch_idx, (real, labels) in enumerate(self.loader):
                 real = real.to(self.device)
-                labels = labels.unsqueeze(-1).unsqueeze(-1)
+                labels = labels.unsqueeze(-1).unsqueeze(-1).to(self.device)
                 critic_labels = labels.to(self.device)
                 cur_batch_size = real.shape[0]
 
