@@ -71,7 +71,7 @@ class TrainLoop():
             for batch_idx, (real, labels) in enumerate(self.loader):
                 real = real.to(self.device)
                 labels = labels.unsqueeze(-1).unsqueeze(-1).to(self.device)
-                labels_expanded = expand_labels_for_input(real, labels).to(device)
+                labels_expanded = expand_labels_for_input(real, labels, self.device).to(self.device)
                 cur_batch_size = real.shape[0]
 
                 # Train the critic
