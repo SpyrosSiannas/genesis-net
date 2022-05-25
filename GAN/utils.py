@@ -53,7 +53,7 @@ def label_conv_concat(input_, labels):
     input_shape = input_.shape
     labels_shape = labels.shape
     expanded_labels = labels*(torch.ones(input_shape[0], labels_shape[1], input_shape[2], input_shape[3]))
-    return torch.concat([input_, expanded_labels], dim=1)
+    return torch.concat([input_, expanded_labels], dim=1).to(device)
 
 class CelebA(Dataset):
     def __init__(self,
