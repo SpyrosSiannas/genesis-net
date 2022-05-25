@@ -7,7 +7,7 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from GAN.model import Discriminator, Generator, initialize_weights
-from GAN.utils import gradient_penalty, Hyperparameters, CelebA
+from GAN.utils import gradient_penalty, Hyperparameters, CelebA, label_conv_concat
 
 from datetime import datetime
 import os
@@ -71,14 +71,15 @@ class TrainLoop():
             for batch_idx, (real, labels) in enumerate(self.loader):
                 real = real.to(self.device)
                 labels = labels.unsqueeze(-1).unsqueeze(-1).to(self.device)
-                critic_labels = labels.to(self.device)
                 cur_batch_size = real.shape[0]
 
                 # Train the critic
                 for _ in range(self.params.CRITIC_ITERATIONS):
                     noise = torch.randn(cur_batch_size, self.params.NOISE_DIM).view(-1, self.params.NOISE_DIM, 1, 1).to(self.device)
                     fake = self.gen(noise, labels).to(self.device)
+                    critic_labels_real = label_conv_concat(real, labels, self.device)
                     critic_real = self.disc(real, critic_labels).reshape(-1)
+                    critic_labels_fake = label_conv_concat(fake, labels, self.device)
                     critic_fake = self.disc(fake, critic_labels).reshape(-1)
                     gp = gradient_penalty(self.disc, critic_labels, real, fake, device=self.device)
                     loss_critic = -(torch.mean(critic_real) \

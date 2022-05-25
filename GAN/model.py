@@ -46,7 +46,6 @@ class Discriminator(nn.Module):
 
 
     def forward(self, m_input, labels):
-        m_input = label_conv_concat(m_input, labels)
         return self.discriminator(m_input)
 
     def _block(self, in_channels, out_channels, kernel_size, stride, padding):
