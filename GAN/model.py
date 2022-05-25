@@ -45,8 +45,9 @@ class Discriminator(nn.Module):
         )
 
 
-    def forward(self, m_input_concatenated):
-        return self.discriminator(m_input_concatenated)
+    def forward(self, m_input, labels):
+        m_input = torch.cat([m_input, labels], dim=1)
+        return self.discriminator(m_input)
 
     def _block(self, in_channels, out_channels, kernel_size, stride, padding):
         return nn.Sequential(

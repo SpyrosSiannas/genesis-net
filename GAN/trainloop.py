@@ -7,7 +7,7 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from GAN.model import Discriminator, Generator, initialize_weights
-from GAN.utils import gradient_penalty, Hyperparameters, CelebA, label_conv_concat
+from GAN.utils import gradient_penalty, Hyperparameters, CelebA, expand_labels_for_input
 
 from datetime import datetime
 import os
@@ -71,19 +71,17 @@ class TrainLoop():
             for batch_idx, (real, labels) in enumerate(self.loader):
                 real = real.to(self.device)
                 labels = labels.unsqueeze(-1).unsqueeze(-1).to(self.device)
+                labels_expanded = expand_labels_for_input(real, labels).to(device)
                 cur_batch_size = real.shape[0]
 
                 # Train the critic
                 for _ in range(self.params.CRITIC_ITERATIONS):
                     noise = torch.randn(cur_batch_size, self.params.NOISE_DIM).view(-1, self.params.NOISE_DIM, 1, 1).to(self.device)
                     fake = self.gen(noise, labels).to(self.device)
+                    critic_real = self.disc(real, labels_expanded).reshape(-1)
+                    critic_fake = self.disc(fake, labels_expanded).reshape(-1)
 
-                    real_concat = label_conv_concat(real, labels, self.device)
-                    critic_real = self.disc(real_concat).reshape(-1)
-                    fake_concat = label_conv_concat(fake, labels, self.device)
-                    critic_fake = self.disc(fake_concat).reshape(-1)
-
-                    gp = gradient_penalty(self.disc, critic_labels, real, fake, device=self.device)
+                    gp = gradient_penalty(self.disc, labels_expanded, real, fake, device=self.device)
                     loss_critic = -(torch.mean(critic_real) \
                                 - torch.mean(critic_fake)) \
                                 + self.params.LAMBDA_GP*gp
@@ -92,7 +90,7 @@ class TrainLoop():
                     loss_critic.backward(retain_graph=True)
                     self.opt_disc.step()
 
-                output = self.disc(fake, critic_labels_fake).reshape(-1)
+                output = self.disc(fake, labels_expanded).reshape(-1)
                 loss_gen = -torch.mean(output)
                 self.gen.zero_grad()
                 loss_gen.backward()
