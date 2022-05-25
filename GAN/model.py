@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from collections import OrderedDict
+from GAN.utils import label_conv_concat
 
 # Discriminator net
 class Discriminator(nn.Module):
@@ -45,7 +46,7 @@ class Discriminator(nn.Module):
 
 
     def forward(self, m_input, labels):
-        m_input = torch.cat([m_input, labels], dim = 1)
+        m_input = label_conv_concat(m_input, labels)
         return self.discriminator(m_input)
 
     def _block(self, in_channels, out_channels, kernel_size, stride, padding):
@@ -88,8 +89,7 @@ class Generator(nn.Module):
 
     def forward(self, m_input, labels):
         # Latent Vector : N x noise_dim x 1 x 1
-
-        m_input = torch.cat([m_input, labels], dim=1)
+        m_input = torch.cat([m_input, labels], dim = 1)
         return self.gen(m_input)
 
     def _block(self, in_channels, out_channels, kernel_size, stride, padding):
