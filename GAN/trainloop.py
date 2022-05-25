@@ -77,19 +77,22 @@ class TrainLoop():
                 for _ in range(self.params.CRITIC_ITERATIONS):
                     noise = torch.randn(cur_batch_size, self.params.NOISE_DIM).view(-1, self.params.NOISE_DIM, 1, 1).to(self.device)
                     fake = self.gen(noise, labels).to(self.device)
-                    critic_labels_real = label_conv_concat(real, labels, self.device)
-                    critic_real = self.disc(real, critic_labels_real).reshape(-1)
-                    critic_labels_fake = label_conv_concat(fake, labels, self.device)
-                    critic_fake = self.disc(fake, critic_labels_fake).reshape(-1)
+
+                    real_concat = label_conv_concat(real, labels, self.device)
+                    critic_real = self.disc(real_concat).reshape(-1)
+                    fake_concat = label_conv_concat(fake, labels, self.device)
+                    critic_fake = self.disc(fake_concat).reshape(-1)
+
                     gp = gradient_penalty(self.disc, critic_labels, real, fake, device=self.device)
                     loss_critic = -(torch.mean(critic_real) \
                                 - torch.mean(critic_fake)) \
                                 + self.params.LAMBDA_GP*gp
+
                     self.disc.zero_grad()
                     loss_critic.backward(retain_graph=True)
                     self.opt_disc.step()
 
-                output = self.disc(fake, critic_labels).reshape(-1)
+                output = self.disc(fake, critic_labels_fake).reshape(-1)
                 loss_gen = -torch.mean(output)
                 self.gen.zero_grad()
                 loss_gen.backward()

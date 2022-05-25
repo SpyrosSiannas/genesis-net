@@ -45,8 +45,8 @@ class Discriminator(nn.Module):
         )
 
 
-    def forward(self, m_input, labels):
-        return self.discriminator(m_input)
+    def forward(self, m_input_concatenated):
+        return self.discriminator(m_input_concatenated)
 
     def _block(self, in_channels, out_channels, kernel_size, stride, padding):
         return nn.Sequential(
