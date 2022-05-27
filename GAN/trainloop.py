@@ -13,9 +13,10 @@ from datetime import datetime
 import os
 
 class TrainLoop():
-    def __init__(self, model_storage_path="./model_checkpoints", desired_labels=[]) -> None:
+    def __init__(self, model_storage_path="./model_checkpoints", desired_labels=[], show_progress=True) -> None:
         self.desired_labels=desired_labels
         self.model_storage_path = model_storage_path
+        self.show_progress = show_progress
         # Hyperparameters and general setup
         self.params = Hyperparameters()
         if self.desired_labels:
@@ -53,6 +54,8 @@ class TrainLoop():
         self.writer_real = SummaryWriter(f"logs/real")
         self.writer_fake = SummaryWriter(f"logs/fake")
         self.fixed_noise = torch.randn(32, self.params.Z_DIM, 1, 1).to(self.device)
+        _, self.fixed_attrs = self.dataset[:32]
+
 
     def predict(self, features_vector):
         if (self.__load_model("cpu")):
@@ -106,7 +109,10 @@ class TrainLoop():
                     )
 
                     with torch.no_grad():
-                        fake = self.gen(noise, labels)
+                        if self.show_progress:
+                            fake = self.gen(self.fixed_noise, self.fixed_attrs)
+                        else:
+                            fake = self.gen(noise, labels_expanded)
                         img_grid_real = torchvision.utils.make_grid(
                             real[:32], normalize=True
                         )

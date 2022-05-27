@@ -20,6 +20,7 @@ train_labels = [
     "Narrow_Eyes",
     "No_Beard",
     "Oval_Face",
+    "Pale_Skin",
     "Receding_Hairline",
     "Smiling",
     "Straight_Hair",
