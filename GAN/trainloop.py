@@ -53,10 +53,9 @@ class TrainLoop():
         # TODO: Move logger to another class
         self.writer_real = SummaryWriter(f"logs/real")
         self.writer_fake = SummaryWriter(f"logs/fake")
-        self.fixed_noise = torch.randn(32, self.params.Z_DIM, 1, 1).to(self.device)
-        self.fixed_attrs = [self.dataset[i][1] for i in range(32)]
-        self.fixed_attrs = torch.tensor(self.fixed_attrs).to(self.device)
-        self.fixed_attrs = expand_labels_for_input(self.fixed_noise, self.fixed_attrs ).to(self.device)
+        self.fixed_noise = torch.randn(64, self.params.Z_DIM, 1, 1).to(self.device)
+        _, self.fixed_attrs = next(iter(self.loader))
+        self.fixed_attrs = expand_labels_for_input(self.fixed_noise, self.fixed_attrs).to(self.device)
 
     def predict(self, features_vector):
         if (self.__load_model("cpu")):
