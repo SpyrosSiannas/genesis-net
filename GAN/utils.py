@@ -5,6 +5,7 @@ from torch.utils.data import Dataset
 import os
 from PIL import Image
 import numpy as np
+from itertools import compress
 
 @dataclass
 class Hyperparameters:
@@ -58,18 +59,73 @@ def expand_labels_for_input(input_, labels, device="cpu"):
                               input_shape[3]).to(device)
     return labels*ones_vec
 
+def generate_anno_mask(desired_vec, annot_vec):
+    if not desired_vec:
+        return [True for _ in annot_vec]
+    mask = [True if attr in desired_vec else False for attr in annot_vec]
+    return mask
+
+def anno_transform(mask_vec, data):
+    return list(compress(data, mask_vec))
+
+
 class CelebA(Dataset):
+    """
+    CelebA Dataset Attributes:
+        0 - 5_o_Clock_Shadow
+        1 - Arched_Eyebrows
+        2 - Attractive
+        3 - Bags_Under_Eyes
+        4 - Bald
+        5 - Bangs
+        6 - Big_Lips
+        7 - Big_Nose
+        8 - Black_Hair
+        9 - Blond_Hair
+        10 - Blurry
+        11 - Brown_Hair
+        12 - Bushy_Eyebrows
+        13 - Chubby
+        14 - Double_Chin
+        15 - Eyeglasses
+        16 - Goatee
+        17 - Gray_Hair
+        18 - Heavy_Makeup
+        19 - High_Cheekbones
+        20 - Male
+        21 - Mouth_Slightly_Open
+        22 - Mustache
+        23 - Narrow_Eyes
+        24 - No_Beard
+        25 - Oval_Face
+        26 - Pale_Skin
+        27 - Pointy_Nose
+        28 - Receding_Hairline
+        29 - Rosy_Cheeks
+        30 - Sideburns
+        31 - Smiling
+        32 - Straight_Hair
+        33 - Wavy_Hair
+        34 - Wearing_Earrings
+        35 - Wearing_Hat
+        36 - Wearing_Lipstick
+        37 - Wearing_Necklace
+        38 - Wearing_Necktie
+        39 - Young
+    """
     def __init__(self,
                  root,
                  image_dir='dataset/img/img_align_celeba',
                  anno_file='dataset/labels/Anno/list_attr_celeba.txt',
-                 transform=None):
+                 transform=None,
+                 desired_labels=[]):
         super().__init__()
         assert os.path.isdir(root), 'Dataset dir does not exist'
         self.root = root
         self.image_dir = image_dir
         self.anno_file = anno_file
         self.transform = transform
+        self.desired_labels = desired_labels
 
         self.data, self.labels = self.parse_anno_file()
 
@@ -92,6 +148,7 @@ class CelebA(Dataset):
                 #second line contains class labels
                 elif idx == 1:
                     attrs  = line.split(' ')
+                    self.mask = generate_anno_mask(self.desired_labels, attrs)
                 else:
                     elements = [e for e in line.split(' ') if e]
                     img_path = os.path.join(self.root, self.image_dir, elements[0])
@@ -100,6 +157,7 @@ class CelebA(Dataset):
                         continue
                     # 0 for -1 and 1 for 1
                     image_onehot = [0 if int(attr) == -1 else 1 for attr in image_attr]
+                    image_onehot = anno_transform(self.mask, image_onehot)
                     data.append({
                         'path': img_path,
                         'attr': image_onehot

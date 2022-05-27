@@ -13,10 +13,13 @@ from datetime import datetime
 import os
 
 class TrainLoop():
-    def __init__(self, model_storage_path="./model_checkpoints") -> None:
+    def __init__(self, model_storage_path="./model_checkpoints", desired_labels=[]) -> None:
+        self.desired_labels=desired_labels
         self.model_storage_path = model_storage_path
         # Hyperparameters and general setup
         self.params = Hyperparameters()
+        if self.desired_labels:
+            self.params.NUM_CLASSES = len(self.desired_labels)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         m_transforms = transforms.Compose(
             [
@@ -29,7 +32,7 @@ class TrainLoop():
         )
 
         #self.dataset = datasets.CelebA(root="dataset", transform=m_transforms, download=True)
-        self.dataset = CelebA('.', transform = m_transforms)
+        self.dataset = CelebA('.', transform = m_transforms, desired_labels=self.desired_labels)
 
         self.loader = DataLoader(self.dataset, batch_size=self.params.BATCH_SIZE, shuffle=True)
         self.gen = Generator(self.params.NOISE_DIM,
